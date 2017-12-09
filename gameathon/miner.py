@@ -39,6 +39,7 @@ class Miner(object):
               'used_target': block['target'],
               'transactions': block['transactions']
             }
+        r = requests.post(_ENDPOINT, json=report)
 
 
     def mine_block(self, block):
