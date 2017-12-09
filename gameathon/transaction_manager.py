@@ -1,6 +1,8 @@
 import Pyro4
 import json
 import requests
+import binascii
+import hashlib
 
 from messenger import register
 
@@ -35,31 +37,41 @@ class TransactionManager(object):
         transaction_hash = TransactionManager._get_hash(transaction)
         del self._pool[transaction_hash]
 
+    def _is_hex(s):
+      try:
+          if len(s) % 2 != 0: return False
+          if int(s, 16): return True
+      except ValueError:
+          return False
+
     def _to_binary(value):
-        # TODO
-        return str(value)
+        if TransactionManager._is_hex(str(value)):
+          return binascii.unhexlify(str(value))
+        return str(value).encode('ascii')
 
     def _reverse_double_sha256(value):
-        # TODO
-        return value
+        d = hashlib.sha256(value)
+        d2 = hashlib.sha256()
+        d2.update(d.digest())
+        return d2.hexdigest()[::-1]
 
-    def _hash_transaction(transaction, lock_time=0):
+    def _hash_transaction(self, transaction, lock_time=0):
         # Fixme: support more than one input/output.
         input_ = transaction['inputs'][0]
-        input_payload = ''.join([
+        input_payload = b''.join([
             TransactionManager._to_binary(input_['prev_hash']),
             TransactionManager._to_binary(input_['script_sig']),
             TransactionManager._to_binary(input_['vout'])
             ])
 
         output_ = transaction['outputs'][0]
-        output_payload = ''.join([
+        output_payload = b''.join([
             TransactionManager._to_binary(output_['value']),
             TransactionManager._to_binary(len(output_['script'])),
             TransactionManager._to_binary(output_['script'])
             ])
 
-        transaction = ''.join([
+        transaction = b''.join([
             TransactionManager._to_binary(TransactionManager._TRANS_VERSION),
             TransactionManager._to_binary(len(transaction['inputs'])),
             TransactionManager._to_binary(input_payload),
@@ -67,7 +79,6 @@ class TransactionManager(object):
             TransactionManager._to_binary(output_payload),
             TransactionManager._to_binary(lock_time)
             ])
-
 
         return TransactionManager._reverse_double_sha256(transaction)
 
