@@ -9,12 +9,14 @@ class TransactionManager(object):
     _GAME = 'testnet'
     _ENDPOINT = "https://gameathon.mifiel.com/api/v1/games/{}/pool" \
                 .format(_GAME)
+    _TRANS_VERSION = 1
 
     def init(self):
         self._pool = {}
         # Fill pool with current transactions.
         pool_response = requests.get(self._ENDPOINT)
         raw_pool = json.loads(pool_response.content)
+        print(raw_pool)
         for transaction in raw_pool:
             self.new_transaction(transaction)
 
@@ -33,27 +35,37 @@ class TransactionManager(object):
         transaction_hash = TransactionManager._get_hash(transaction)
         del self._pool[transaction_hash]
 
+    def _to_binary(value):
+        # TODO
+        return str(value)
+
+    def _reverse_double_sha256(value):
+        # TODO
+        return value
 
     def _hash_transaction(transaction, lock_time=0):
+        # Fixme: support more than one input/output.
+        input_ = transaction['inputs'][0]
         input_payload = ''.join([
-            TransactionManager._to_binary(transaction['prev_hash']),
-            TransactionManager._to_binary(transaction['prev_script']),
-            TransactionManager._to_binary(transaction['vout'])
+            TransactionManager._to_binary(input_['prev_hash']),
+            TransactionManager._to_binary(input_['script_sig']),
+            TransactionManager._to_binary(input_['vout'])
             ])
 
+        output_ = transaction['outputs'][0]
         output_payload = ''.join([
-            TransactionManager._to_binary(transaction['value']),
-            TransactionManager._to_binary(len(transaction['script'])),
-            TransactionManager._to_binary(transaction['script'])
+            TransactionManager._to_binary(output_['value']),
+            TransactionManager._to_binary(len(output_['script'])),
+            TransactionManager._to_binary(output_['script'])
             ])
 
         transaction = ''.join([
-            _VERSION,
+            TransactionManager._to_binary(TransactionManager._TRANS_VERSION),
             TransactionManager._to_binary(len(transaction['inputs'])),
-            TransactionManager._to_binary(transaction['value']),
+            TransactionManager._to_binary(input_payload),
             TransactionManager._to_binary(len(transaction['outputs'])),
-            TransactionManager._to_binary(transaction['value']),
-            lock_time
+            TransactionManager._to_binary(output_payload),
+            TransactionManager._to_binary(lock_time)
             ])
 
 
@@ -70,14 +82,15 @@ class TransactionManager(object):
         inputs = [input_]
         outputs = [output_]
         confirmations = 0
-        hash_ = TrasactionManager._hash_transaction(transaction)
+        transaction = {'hash': None,
+                       'inputs': inputs,
+                       'outputs': outputs,
+                       'size': 0,
+                       'confirmations': confirmations}
+        hash_ = TransactionManager._hash_transaction(transaction)
+        transaction['hash'] = hash_
+        return transaction
 
-
-        return {'hash': hash_,
-                'inputs': inputs,
-                'outputs': outputs,
-                'size': 0,
-                'confirmations': 0}
 
     def _select_transactions(self):
         coinbase = TransactionManager._generate_coinbase()
@@ -87,8 +100,12 @@ class TransactionManager(object):
             transactions.append(transaction)
         return transactions
 
+    def _hash_pair(h1, h2):
+        # TODO
+        return '0'*64
+
     def _compute_merkle_hash(transaction_hashes):
-        if len(transaction_hashes == 1):
+        if len(transaction_hashes) == 1:
             return transaction_hashes[0]
 
         # Ensure we have even number of transactions
@@ -100,34 +117,34 @@ class TransactionManager(object):
             h1 = transaction_hashes[i]
             h2 = transaction_hashes[i + 1]
             new_hashes.append(TransactionManager._hash_pair(h1, h2))
-            return self._comput_merkle_hash(new_hashes)
+            return TransactionManager._compute_merkle_hash(new_hashes)
 
 
 
     def build_block(self, prev_block):
-        prev_block_hash = prev_block.hash
+        prev_block_hash = prev_block['hash']
         hash_ = '#'*64
-        height = prev_block.height + 1
+        height = prev_block['height'] + 1
         message = 'TeamZero Rules!'
-        transactions = _select_transactions()
+        transactions = self._select_transactions()
         transaction_hashes = [TransactionManager._get_hash(t) for t in transactions]
-        merkle_hash = self._compute_merkle_hash(transaction_hashes)
+        merkle_hash = TransactionManager._compute_merkle_hash(transaction_hashes)
         reward = 50
         nonce = None
         user = 'TeamZero Miner!'
         target = None
         created_at = None
-        return Block(prev_block_hash,
-                     hash_,
-                     height,
-                     message,
-                     merkle_hash,
-                     transactions,
-                     reward,
-                     nonce,
-                     user,
-                     target,
-                     created_at)
+        return {'prev_block_hash': prev_block_hash,
+                'hash': hash_,
+                'height': height,
+                'message': message,
+                'merkle_hash': merkle_hash,
+                'transactions': transactions,
+                'reward': reward,
+                'nonce': nonce,
+                'user': user,
+                'target': target,
+                'created_at': created_at}
 
     def new_transaction(self, transaction):
         transaction_hash = TransactionManager._get_hash(transaction)
