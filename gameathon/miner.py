@@ -4,6 +4,7 @@ import random
 import sys
 import time
 import requests
+import json
 
 from messenger import register
 
@@ -19,11 +20,17 @@ class Miner(object):
     _GAME = 'testnet'
     _ENDPOINT = 'https://gameathon.mifiel.com/api/v1/games/{}/block_found' \
                 .format(_GAME)
+    _ENDPOINT_TARGET = 'https://gameathon.mifiel.com/api/v1/games/{}/target' \
+                .format(_GAME)
 
     def __init__(self):
         self.target_raw = b'0'
         self.target = 0
         self.stop_ = True
+        response = requests.get(self._ENDPOINT_TARGET)
+        target = json.loads(response.content)['target']
+        self.target_changed(target)
+
 
     def stop(self):
         self.stop_ = True
@@ -31,15 +38,16 @@ class Miner(object):
 
     def _report_found(self, block):
         report = {
-              'prev_block_hash': block['prev_block_hash'],
+              'prev_block_hash': block['prev_block_hash'].decode(),
               'message': 'TeamZero Level Up!',
               'nonce': block['nonce'],
               'nickname': 'TeamZero',
-              'merkle_root': block['merkle_hash'],
-              'used_target': block['target'],
+              'merkle_root': block['merkle_hash'].decode(),
+              'used_target': block['target'].decode(),
               'transactions': block['transactions']
             }
-        r = requests.post(_ENDPOINT, json=report)
+        r = requests.post(self._ENDPOINT, json=report)
+        print("POST block response: " + r.text[:300] + '...')
 
 
     def mine_block(self, block):
@@ -65,7 +73,7 @@ class Miner(object):
 
 
     def target_changed(self, new_target):
-        self.target_raw = new_target
+        self.target_raw = new_target.encode('ascii')
         self.target = int(new_target, 16)
 
 
