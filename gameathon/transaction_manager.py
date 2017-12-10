@@ -29,8 +29,13 @@ class TransactionManager(object):
         return transaction['hash']
 
     def block_found(self, block):
-        for transaction in block.transactions:
-            self.remove_transaction(transaction)
+        for transaction in block['transactions']:
+            if transaction['inputs'][0]['prev_hash'] != '0000000000000000000000000000000000000000000000000000000000000000': 
+                try:
+                    self.remove_transaction(transaction)
+                except:
+                    print("REMOVE FAILED:")
+                    print(transaction)
 
     def new_transaction(self, transaction):
         transaction_hash = TransactionManager._get_hash(transaction)

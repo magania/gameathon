@@ -5,6 +5,7 @@ import sys
 import time
 import requests
 import json
+from threading import Thread
 
 from messenger import register
 
@@ -27,16 +28,16 @@ class Miner(object):
         self.target_raw = b'0'
         self.target = 0
         self.stop_ = True
+        self.worker = None
         response = requests.get(self._ENDPOINT_TARGET)
         target = json.loads(response.content)['target']
         self.target_changed(target)
 
-
     def stop(self):
-        self.stop_ = True
+        if self.worker:
+            self.worker.stop()
 
-
-    def _report_found(self, block):
+    def _report_found(block):
         report = {
               'prev_block_hash': block['prev_block_hash'],
               'message': '5465616d5a65726f2052756c657321',
@@ -47,30 +48,36 @@ class Miner(object):
               'transactions': block['transactions'],
               'height': block['height']
             }
-        r = requests.post(self._ENDPOINT, json=report)
+        r = requests.post(Miner._ENDPOINT, json=report)
         print("POST block response: " + r.text[:300] + '...')
 
 
     def mine_block(self, block):
+        target_ = self.target_raw
+        worker = Thread(target=Miner._do_mine_block, args = (0, self._MAX_INT, target_, block))
+        self._worker = worker
+        self._worker.start()
+
+
+    def _do_mine_block(min_int, max_int, target, block):
         partial_header = block['version_'] + '|' + \
                          block['prev_block_hash'] + '|' + \
                          block['merkle_hash'] + '|' + \
-                         self.target_raw + '|' + \
+                         target + '|' + \
                          block['message'] + '|'
-        self.stop_ = False
-        while not self.stop_:
-            nonce = random.randint(0, self._MAX_INT)
+        stop_ = False
+        while not stop_:
+            nonce = random.randint(min_int, max_int)
             block_header = partial_header + str(nonce)
             hash_ = hashcash(block_header)
-            if hash_ < self.target_raw:
-                print(hash_)
+            if hash_ < target:
                 print('block_found!!! :')
                 print(block_header)
                 block['nonce'] = nonce
                 block['created_at'] = time.time()
-                block['target'] = self.target_raw
-                self._report_found(block)
-                self.stop_ = True
+                block['target'] = target
+                Miner._report_found(block)
+                stop_ = True
 
 
 
