@@ -17,6 +17,7 @@ class TransactionManager(object):
 
     def init(self):
         self._pool = {}
+        self.fees = 0
         # Fill pool with current transactions.
         pool_response = requests.get(self._ENDPOINT)
         raw_pool = json.loads(pool_response.content)
@@ -154,6 +155,7 @@ class TransactionManager(object):
         self.height = height
         message = binascii.hexlify(b'TeamZero Rules!').decode()
         transactions = self._select_transactions()
+        self.compute_fees(transactions)
         transaction_hashes = [TransactionManager._get_hash(t) for t in transactions]
         merkle_hash = TransactionManager._compute_merkle_hash(transaction_hashes)
         nonce = None
@@ -172,6 +174,17 @@ class TransactionManager(object):
                 'created_at': created_at,
                 'version_': '1'}
 
+    def compute_fees(self, transactions):
+        self.fees = 0
+        inpt_am = 0
+        oupt_am = 0
+        for tx in transactions[1:]:
+            for inpt in tx['inputs']:
+                inpt_am += inpt['amount']
+            for oupt in tx['outputs']:
+                oupt_am += oupt['value']
+        self.fees = inpt_am - oupt_am
+
     def new_transaction(self, transaction):
         transaction_hash = TransactionManager._get_hash(transaction)
         self._pool[transaction_hash] = transaction
@@ -183,6 +196,8 @@ class TransactionManager(object):
     def compute_reward(self):
         reward = 5000000000
         reward = reward >> floor(self.height/90)
+        reward += self.fees
+        print("Reward", reward)
         return reward
 
 if __name__ == '__main__':
