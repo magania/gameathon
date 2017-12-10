@@ -111,13 +111,16 @@ class TransactionManager(object):
         coinbase = self.generate_coinbase()
         transactions = [coinbase]
         # For now return all transactions plus coinbase
-        # for transaction in self._pool.values():
-        #     transactions.append(transaction)
+        for transaction in self._pool.values():
+            transactions.append(transaction)
         return transactions
 
     def _hash_pair(h1, h2):
-        # TODO
-        return '0'*64
+        b1 = h1.encode('ascii') #TransactionManager._to_binary(h1)
+        b2 = h2.encode('ascii') #TransactionManager._to_binary(h2)
+        h = TransactionManager._reverse_double_sha256(b1+b2)[::-1]
+        print('hash pair:',h)
+        return h
 
     def _compute_merkle_hash(transaction_hashes):
         if len(transaction_hashes) == 1:
@@ -132,7 +135,7 @@ class TransactionManager(object):
             h1 = transaction_hashes[i]
             h2 = transaction_hashes[i + 1]
             new_hashes.append(TransactionManager._hash_pair(h1, h2))
-            return TransactionManager._compute_merkle_hash(new_hashes)
+        return TransactionManager._compute_merkle_hash(new_hashes)
 
 
 
