@@ -18,7 +18,7 @@ def hashcash(msg):
 @Pyro4.expose
 class Miner(object):
     _MAX_INT = 9999999
-    _GAME = 'testnet'
+    _GAME = 'testnet3'
     _ENDPOINT = 'https://gameathon.mifiel.com/api/v1/games/{}/block_found' \
                 .format(_GAME)
     _ENDPOINT_TARGET = 'https://gameathon.mifiel.com/api/v1/games/{}/target' \

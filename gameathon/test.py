@@ -3,7 +3,7 @@ from transaction_manager import TransactionManager
 import requests
 import json 
 
-_GAME = 'testnet'
+_GAME = 'testnet3'
 _ENDPOINT_BLOCKS = 'https://gameathon.mifiel.com/api/v1/games/{}/blocks' \
                 .format(_GAME)
 

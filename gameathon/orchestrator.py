@@ -6,7 +6,7 @@ import websockets
 from messenger import connect
 import requests
 
-_GAME = 'testnet'
+_GAME = 'testnet3'
 
 _ENDPOINT = 'wss://gameathon.mifiel.com/cable'
 _PARAMS = {
