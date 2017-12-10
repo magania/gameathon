@@ -45,9 +45,11 @@ class TransactionManager(object):
           return False
 
     def _to_binary(value):
-        if TransactionManager._is_hex(str(value)):
-          return binascii.unhexlify(str(value))
-        return str(value).encode('ascii')
+        print(value)
+        return binascii.unhexlify(str(value))
+
+    def _int_to_binary(i):
+        return str(i).encode('ascii')
 
     def _reverse_double_sha256(value):
         d = hashlib.sha256(value)
@@ -55,29 +57,29 @@ class TransactionManager(object):
         d2.update(d.digest())
         return d2.hexdigest()[::-1]
 
-    def _hash_transaction(self, transaction, lock_time=0):
+    def _hash_transaction(transaction, lock_time=0):
         # Fixme: support more than one input/output.
         input_ = transaction['inputs'][0]
         input_payload = b''.join([
             TransactionManager._to_binary(input_['prev_hash']),
             TransactionManager._to_binary(input_['script_sig']),
-            TransactionManager._to_binary(input_['vout'])
+            TransactionManager._int_to_binary(input_['vout'])
             ])
 
         output_ = transaction['outputs'][0]
         output_payload = b''.join([
-            TransactionManager._to_binary(output_['value']),
-            TransactionManager._to_binary(len(output_['script'])),
+            TransactionManager._int_to_binary(output_['value']),
+            TransactionManager._int_to_binary(len(TransactionManager._to_binary(output_['script']))),
             TransactionManager._to_binary(output_['script'])
             ])
 
         transaction = b''.join([
-            TransactionManager._to_binary(TransactionManager._TRANS_VERSION),
-            TransactionManager._to_binary(len(transaction['inputs'])),
-            TransactionManager._to_binary(input_payload),
-            TransactionManager._to_binary(len(transaction['outputs'])),
-            TransactionManager._to_binary(output_payload),
-            TransactionManager._to_binary(lock_time)
+            TransactionManager._int_to_binary(TransactionManager._TRANS_VERSION),
+            TransactionManager._int_to_binary(len(transaction['inputs'])),
+            input_payload,
+            TransactionManager._int_to_binary(len(transaction['outputs'])),
+            output_payload,
+            TransactionManager._int_to_binary(lock_time)
             ])
 
         return TransactionManager._reverse_double_sha256(transaction)
@@ -85,9 +87,9 @@ class TransactionManager(object):
     def _generate_coinbase():
         input_ = { 'prev_hash': '0000000000000000000000000000000000000000000000000000000000000000',
                    'vout': -1,
-                   'script_sig': 'TeamZero CoinBase'}
+                   'script_sig': '5465616d5a65726f2052756c657321'}
 
-        output_ = {'script': 'address',
+        output_ = {'script': '257db1167953557378c179e7ceeaa572a1bad464',
                    'value': 5000000000 }
 
         inputs = [input_]
@@ -107,8 +109,8 @@ class TransactionManager(object):
         coinbase = TransactionManager._generate_coinbase()
         transactions = [coinbase]
         # For now return all transactions plus coinbase
-        for transaction in self._pool.values():
-            transactions.append(transaction)
+        # for transaction in self._pool.values():
+        #     transactions.append(transaction)
         return transactions
 
     def _hash_pair(h1, h2):
@@ -136,7 +138,7 @@ class TransactionManager(object):
         prev_block_hash = prev_block['hash']
         hash_ = '#'*64
         height = prev_block['height'] + 1
-        message = 'TeamZero Rules!'
+        message = binascii.hexlify(b'TeamZero Rules!').decode()
         transactions = self._select_transactions()
         transaction_hashes = [TransactionManager._get_hash(t) for t in transactions]
         merkle_hash = TransactionManager._compute_merkle_hash(transaction_hashes)
@@ -155,7 +157,8 @@ class TransactionManager(object):
                 'nonce': nonce,
                 'user': user,
                 'target': target,
-                'created_at': created_at}
+                'created_at': created_at,
+                'version_': '1'}
 
     def new_transaction(self, transaction):
         transaction_hash = TransactionManager._get_hash(transaction)
