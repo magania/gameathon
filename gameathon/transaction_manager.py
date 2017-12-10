@@ -10,7 +10,7 @@ from random import randint
 
 @Pyro4.expose
 class TransactionManager(object):
-    _GAME = 'testnet'
+    _GAME = 'testnet3'
     _ENDPOINT = "https://gameathon.mifiel.com/api/v1/games/{}/pool" \
                 .format(_GAME)
     _TRANS_VERSION = 1
@@ -117,7 +117,10 @@ class TransactionManager(object):
         transactions = [coinbase]
         # For now return all transactions plus coinbase
         for transaction in self._pool.values():
-            transactions.append(transaction)
+            if transaction['inputs'][0]['prev_hash'] != '0000000000000000000000000000000000000000000000000000000000000000': 
+                transactions.append(transaction)
+            if len(transactions) > 100:
+                break
         return transactions
 
     def _hash_pair(h1, h2):

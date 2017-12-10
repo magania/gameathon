@@ -18,7 +18,7 @@ def hashcash(msg):
 @Pyro4.expose
 class Miner(object):
     _MAX_INT = 9999999
-    _GAME = 'testnet'
+    _GAME = 'testnet3'
     _ENDPOINT = 'https://gameathon.mifiel.com/api/v1/games/{}/block_found' \
                 .format(_GAME)
     _ENDPOINT_TARGET = 'https://gameathon.mifiel.com/api/v1/games/{}/target' \
@@ -34,8 +34,7 @@ class Miner(object):
         self.target_changed(target)
 
     def stop(self):
-        if self.worker:
-            self.worker.stop()
+        pass
 
     def _report_found(block):
         report = {
@@ -53,6 +52,8 @@ class Miner(object):
 
 
     def mine_block(self, block):
+        if self.worker:
+            self.worker.stop()
         target_ = self.target_raw
         worker = Thread(target=Miner._do_mine_block, args = (0, self._MAX_INT, target_, block))
         self._worker = worker
