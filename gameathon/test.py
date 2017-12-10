@@ -9,7 +9,7 @@ _ENDPOINT_BLOCKS = 'https://gameathon.mifiel.com/api/v1/games/{}/blocks' \
 
 
 mm = Miner()
-mm.init()
+mm.init(1)
 tm = TransactionManager()
 tm.init()
 response = requests.get(_ENDPOINT_BLOCKS)

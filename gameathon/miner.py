@@ -18,14 +18,14 @@ def hashcash(msg):
 
 @Pyro4.expose
 class Miner(object):
-    _MAX_INT = 9999999
+    _MAX_INT = 999999999999999
     _GAME = 'testnet4'
     _ENDPOINT = 'https://gameathon.mifiel.com/api/v1/games/{}/block_found' \
                 .format(_GAME)
     _ENDPOINT_TARGET = 'https://gameathon.mifiel.com/api/v1/games/{}/target' \
                 .format(_GAME)
 
-    def init(self):
+    def init(self, value):
         self.target_raw = b'0'
         self.target = 0
         self.stop_ = True
@@ -33,6 +33,7 @@ class Miner(object):
         response = requests.get(self._ENDPOINT_TARGET)
         target = json.loads(response.content)['target']
         self.target_changed(target)
+        self.value = value
 
     def stop(self):
         pass
@@ -53,23 +54,27 @@ class Miner(object):
 
 
     def mine_block(self, block):
+        print('stop')
         if self.worker:
-            self.worker.stop()
+            self.worker.kill()
+        print('done')
         target_ = self.target_raw
-        worker = Thread(target=Miner._do_mine_block, args = (0, self._MAX_INT, target_, block))
+        value = self.value
+        worker = Thread(target=Miner._do_mine_block, args = (0, self._MAX_INT, target_, block, value))
         self._worker = worker
         self._worker.start()
 
 
-    def _do_mine_block(min_int, max_int, target, block):
+    def _do_mine_block(min_int, max_int, target, block, value):
         partial_header = block['version_'] + '|' + \
                          block['prev_block_hash'] + '|' + \
                          block['merkle_hash'] + '|' + \
                          target + '|' + \
                          block['message'] + '|'
         stop_ = False
+        nonce = value
         while not stop_:
-            nonce = random.randint(min_int, max_int)
+            nonce +=  3
             block_header = partial_header + str(nonce)
             hash_ = hashcash(block_header)
             if hash_ < target:
