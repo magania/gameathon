@@ -129,7 +129,7 @@ class TransactionManager(object):
         b1 = h1.encode('ascii') #TransactionManager._to_binary(h1)
         b2 = h2.encode('ascii') #TransactionManager._to_binary(h2)
         h = TransactionManager._reverse_double_sha256(b1+b2)[::-1]
-        print('hash pair:',h)
+        #print('hash pair:',h)
         return h
 
     def _compute_merkle_hash(transaction_hashes):

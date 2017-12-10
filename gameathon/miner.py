@@ -55,26 +55,29 @@ class Miner(object):
 
     def mine_block(self, block):
         print('stop')
+        self.stop_ = True
         if self._worker:
-            self._worker.kill()
+            print('killing worker')
+            #self._worker.stop()
+            
         print('done')
         target_ = self.target_raw
         value = self.value
-        worker = Thread(target=Miner._do_mine_block, args = (0, self._MAX_INT, target_, block, value))
+        worker = Thread(target=self.do_mine_block, args = (0, self._MAX_INT, target_, block, value))
         self._worker = worker
         self._worker.start()
 
 
-    def _do_mine_block(min_int, max_int, target, block, value):
+    def do_mine_block(self,min_int, max_int, target, block, value):
         partial_header = block['version_'] + '|' + \
                          block['prev_block_hash'] + '|' + \
                          block['merkle_hash'] + '|' + \
                          target + '|' + \
                          block['message'] + '|'
-        stop_ = False
+        self.stop_ = False
         nonce = value + 1000000000
         n_nonces = 0
-        while not stop_:
+        while not self.stop_:
             n_nonces += 1
             if n_nonces%100000==0:
                 print('n_nonces',n_nonces) 
@@ -88,7 +91,7 @@ class Miner(object):
                 block['created_at'] = time.time()
                 block['target'] = target
                 Miner._report_found(block)
-                stop_ = True
+                self.stop_ = True
 
 
 
