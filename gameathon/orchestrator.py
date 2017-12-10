@@ -34,6 +34,8 @@ _miner2 = connect('miner2')
 _miner2.init(2)
 _miner3 = connect('miner3')
 _miner3.init(3)
+_miner4 = connect('miner4')
+_miner4.init(4)
 
 def start_mining():
     response = requests.get(_ENDPOINT_BLOCKS)
@@ -44,6 +46,7 @@ def start_mining():
     _miner1.mine_block(new_block)
     _miner2.mine_block(new_block)
     _miner3.mine_block(new_block)
+    _miner4.mine_block(new_block)
 
 def _process_event(event):
     #print(event)
@@ -75,6 +78,7 @@ def _process_event(event):
         _miner1.mine_block(new_block)
         _miner2.mine_block(new_block)
         _miner3.mine_block(new_block)
+        _miner4.mine_block(new_block)
         return
     if event_type == 'target_changed':
         print('Target changed:')
@@ -82,6 +86,7 @@ def _process_event(event):
         _miner1.target_changed(event_data)
         _miner2.target_changed(event_data)
         _miner3.target_changed(event_data)
+        _miner4.mine_block(new_block)
         return
     print('UNPROCESSED:')
     print(event)
