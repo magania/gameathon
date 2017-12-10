@@ -29,7 +29,7 @@ class Miner(object):
         self.target_raw = b'0'
         self.target = 0
         self.stop_ = True
-        self.worker = None
+        self._worker = None
         response = requests.get(self._ENDPOINT_TARGET)
         target = json.loads(response.content)['target']
         self.target_changed(target)
@@ -55,8 +55,8 @@ class Miner(object):
 
     def mine_block(self, block):
         print('stop')
-        if self.worker:
-            self.worker.kill()
+        if self._worker:
+            self._worker.kill()
         print('done')
         target_ = self.target_raw
         value = self.value
@@ -72,8 +72,12 @@ class Miner(object):
                          target + '|' + \
                          block['message'] + '|'
         stop_ = False
-        nonce = value
+        nonce = value + 1000000000
+        n_nonces = 0
         while not stop_:
+            n_nonces += 1
+            if n_nonces%100000==0:
+                print('n_nonces',n_nonces) 
             nonce +=  3
             block_header = partial_header + str(nonce)
             hash_ = hashcash(block_header)
