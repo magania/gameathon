@@ -40,44 +40,40 @@ def start_mining():
     _miner.mine_block(new_block)
 
 def _process_event(event):
-
+    #print(event)
     event_type = event.get('type')
-    if event_type == 'welcome':
-        print(event)
-        print('Connected :)')
-    elif event_type == 'ping':
-        print(event)
+    if event_type == 'ping':
         print('ping:')
-    elif event_type == None:
-        event_type = event.get('message').get("type")
-        if event_type == 'new_transaction':
-            print("New transaction: ")
-            print(event)
-            data = event.get('message').get('data')
-            print(data)
-            _transaction_manager.new_transaction(data)   
-             
+        return
+    if event_type == 'welcome':
+        print('Connected :)')
+        return
+    if event_type == 'confirm_subscription':
+        print('Confirm Subsciption')
+        return
 
-    elif event_type == 'block_found':
+    event_message = event.get('message')
+    event_type = event_message.get('type')
+    event_data = event_message.get('data')
+    if event_type == 'new_transaction':
+        print("New transaction: ")
+        print(event_data)
+        _transaction_manager.new_transaction(event_data)
+        return
+    if event_type == 'block_found':
         print('Block found:')
-        print(event)
-        print('---')
-        data = event.get('message').get('data')
-        _transaction_manager.block_found(data)
-        new_block = _transaction_manager.build_block(data)
+        print(event_data)
+        _transaction_manager.block_found(event_data)
+        new_block = _transaction_manager.build_block(event_data)
         _miner.mine_block(new_block)
-
-    elif event_type == 'target_changed':
+        return
+    if event_type == 'target_changed':
         print('Target changed:')
-        print(event)
-        print('---')
-        data = event.get('message').get('data')
-        _miner.target_changed(data)
-
-    else:
-        print('UNPROCESSED:')
-        print(event)
-        print('---')
+        print(event_data)
+        _miner.target_changed(event_data)
+        return
+    print('UNPROCESSED:')
+    print(event)
 
 async def orchestrator():
     try:
