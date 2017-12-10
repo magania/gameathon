@@ -17,7 +17,6 @@ class TransactionManager(object):
 
     def init(self):
         self._pool = {}
-        self.fees = 0
         # Fill pool with current transactions.
         pool_response = requests.get(self._ENDPOINT)
         raw_pool = json.loads(pool_response.content)
@@ -178,7 +177,7 @@ class TransactionManager(object):
     def _compute_fees(self, transactions):
         inpt_am = 0
         oupt_am = 0
-        for tx in transactions[1:]:
+        for tx in transactions:
             for inpt in tx['inputs']:
                 inpt_am += inpt['amount']
             for oupt in tx['outputs']:
