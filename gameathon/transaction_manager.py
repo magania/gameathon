@@ -92,13 +92,13 @@ class TransactionManager(object):
 
         return TransactionManager._reverse_double_sha256(transaction)
 
-    def generate_coinbase(self):
+    def generate_coinbase(self, reward):
         n = 'TeamZero_basura_'+str(randint(0,10000000000))
         input_ = { 'prev_hash': '0000000000000000000000000000000000000000000000000000000000000000',
                    'vout': -1,
                    'script_sig': binascii.hexlify(n.encode('ascii')).decode()}
         output_ = {'script': '257db1167953557378c179e7ceeaa572a1bad464',
-                   'value': self.compute_reward() }
+                   'value': reward }
 
         inputs = [input_]
         outputs = [output_]
@@ -114,14 +114,16 @@ class TransactionManager(object):
 
 
     def _select_transactions(self):
-        coinbase = self.generate_coinbase()
-        transactions = [coinbase]
+        transactions = []
         # For now return all transactions plus coinbase
         for transaction in self._pool.values():
             if transaction['inputs'][0]['prev_hash'] != '0000000000000000000000000000000000000000000000000000000000000000': 
                 transactions.append(transaction)
             if len(transactions) > 100:
                 break
+        reward = self._compute_reward(transactions)
+        coinbase = self.generate_coinbase(reward)
+        transactions.insert(0, coinbase)
         return transactions
 
     def _hash_pair(h1, h2):
@@ -155,7 +157,6 @@ class TransactionManager(object):
         self.height = height
         message = binascii.hexlify(b'TeamZero Rules!').decode()
         transactions = self._select_transactions()
-        self.compute_fees(transactions)
         transaction_hashes = [TransactionManager._get_hash(t) for t in transactions]
         merkle_hash = TransactionManager._compute_merkle_hash(transaction_hashes)
         nonce = None
@@ -174,8 +175,7 @@ class TransactionManager(object):
                 'created_at': created_at,
                 'version_': '1'}
 
-    def compute_fees(self, transactions):
-        self.fees = 0
+    def _compute_fees(self, transactions):
         inpt_am = 0
         oupt_am = 0
         for tx in transactions[1:]:
@@ -183,7 +183,7 @@ class TransactionManager(object):
                 inpt_am += inpt['amount']
             for oupt in tx['outputs']:
                 oupt_am += oupt['value']
-        self.fees = inpt_am - oupt_am
+        return inpt_am - oupt_am
 
     def new_transaction(self, transaction):
         transaction_hash = TransactionManager._get_hash(transaction)
@@ -193,10 +193,10 @@ class TransactionManager(object):
         transaction_hash = TransactionManager._get_hash(transaction)
         del self._pool[transaction_hash]
 
-    def compute_reward(self):
+    def _compute_reward(self, transactions):
         reward = 5000000000
         reward = reward >> floor(self.height/90)
-        reward += self.fees
+        reward += self._compute_fees(transactions)
         print("Reward", reward)
         return reward
 
