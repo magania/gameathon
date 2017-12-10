@@ -5,6 +5,7 @@ import sys
 import time
 import requests
 import json
+import sys
 from threading import Thread
 
 from messenger import register
@@ -18,7 +19,7 @@ def hashcash(msg):
 @Pyro4.expose
 class Miner(object):
     _MAX_INT = 9999999
-    _GAME = 'testnet3'
+    _GAME = 'testnet4'
     _ENDPOINT = 'https://gameathon.mifiel.com/api/v1/games/{}/block_found' \
                 .format(_GAME)
     _ENDPOINT_TARGET = 'https://gameathon.mifiel.com/api/v1/games/{}/target' \
@@ -88,7 +89,8 @@ class Miner(object):
 
 
 if __name__ == '__main__':
-    miner = register(Miner, 'miner')
+    print('miner' + sys.argv[1])
+    miner = register(Miner, 'miner' + sys.argv[1])
 
     print("Miner: {}".format(miner))
     miner.requestLoop()

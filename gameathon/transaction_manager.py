@@ -10,7 +10,7 @@ from random import randint
 
 @Pyro4.expose
 class TransactionManager(object):
-    _GAME = 'testnet3'
+    _GAME = 'testnet4'
     _ENDPOINT = "https://gameathon.mifiel.com/api/v1/games/{}/pool" \
                 .format(_GAME)
     _TRANS_VERSION = 1

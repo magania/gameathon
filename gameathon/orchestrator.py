@@ -6,7 +6,7 @@ import websockets
 from messenger import connect
 import requests
 
-_GAME = 'testnet3'
+_GAME = 'testnet4'
 
 _ENDPOINT = 'wss://gameathon.mifiel.com/cable'
 _PARAMS = {
@@ -28,8 +28,12 @@ _ENDPOINT_BLOCKS = 'https://gameathon.mifiel.com/api/v1/games/{}/blocks' \
 
 _transaction_manager = connect('transaction_manager')
 _transaction_manager.init()
-_miner = connect('miner')
-_miner.init()
+_miner1 = connect('miner1')
+_miner1.init()
+_miner2 = connect('miner2')
+_miner2.init()
+_miner3 = connect('miner3')
+_miner3.init()
 
 def start_mining():
     response = requests.get(_ENDPOINT_BLOCKS)
@@ -37,7 +41,9 @@ def start_mining():
     ob = blocks[-1]
     print(ob)
     new_block = _transaction_manager.build_block(ob)
-    _miner.mine_block(new_block)
+    _miner1.mine_block(new_block)
+    _miner2.mine_block(new_block)
+    _miner3.mine_block(new_block)
 
 def _process_event(event):
     #print(event)
@@ -63,10 +69,12 @@ def _process_event(event):
     if event_type == 'block_found':
         print('Block found:')
         print(event_data)
-        _miner.stop()
+        #_miner.stop()
         _transaction_manager.block_found(event_data)
         new_block = _transaction_manager.build_block(event_data)
-        _miner.mine_block(new_block)
+        _miner1.mine_block(new_block)
+        _miner2.mine_block(new_block)
+        _miner3.mine_block(new_block)
         return
     if event_type == 'target_changed':
         print('Target changed:')
