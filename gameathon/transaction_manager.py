@@ -5,6 +5,7 @@ import binascii
 import hashlib
 
 from messenger import register
+from random import randint
 
 @Pyro4.expose
 class TransactionManager(object):
@@ -85,9 +86,10 @@ class TransactionManager(object):
         return TransactionManager._reverse_double_sha256(transaction)
 
     def _generate_coinbase():
+        n = 'TeamZero_basura_'+str(randint(0,10000000000))
         input_ = { 'prev_hash': '0000000000000000000000000000000000000000000000000000000000000000',
                    'vout': -1,
-                   'script_sig': '5465616d5a65726f2052756c657321'}
+                   'script_sig': binascii.hexlify(n.encode('ascii')).decode()}
 
         output_ = {'script': '257db1167953557378c179e7ceeaa572a1bad464',
                    'value': 5000000000 }
