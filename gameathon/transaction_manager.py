@@ -3,6 +3,7 @@ import json
 import requests
 import binascii
 import hashlib
+from math import floor
 
 from messenger import register
 from random import randint
@@ -85,14 +86,13 @@ class TransactionManager(object):
 
         return TransactionManager._reverse_double_sha256(transaction)
 
-    def _generate_coinbase():
+    def generate_coinbase(self):
         n = 'TeamZero_basura_'+str(randint(0,10000000000))
         input_ = { 'prev_hash': '0000000000000000000000000000000000000000000000000000000000000000',
                    'vout': -1,
                    'script_sig': binascii.hexlify(n.encode('ascii')).decode()}
-
         output_ = {'script': '257db1167953557378c179e7ceeaa572a1bad464',
-                   'value': 5000000000 }
+                   'value': self.compute_reward() }
 
         inputs = [input_]
         outputs = [output_]
@@ -108,7 +108,7 @@ class TransactionManager(object):
 
 
     def _select_transactions(self):
-        coinbase = TransactionManager._generate_coinbase()
+        coinbase = self.generate_coinbase()
         transactions = [coinbase]
         # For now return all transactions plus coinbase
         # for transaction in self._pool.values():
@@ -140,11 +140,11 @@ class TransactionManager(object):
         prev_block_hash = prev_block['hash']
         hash_ = '#'*64
         height = prev_block['height'] + 1
+        self.height = height
         message = binascii.hexlify(b'TeamZero Rules!').decode()
         transactions = self._select_transactions()
         transaction_hashes = [TransactionManager._get_hash(t) for t in transactions]
         merkle_hash = TransactionManager._compute_merkle_hash(transaction_hashes)
-        reward = 50
         nonce = None
         user = 'TeamZero Miner!'
         target = None
@@ -155,7 +155,6 @@ class TransactionManager(object):
                 'message': message,
                 'merkle_hash': merkle_hash,
                 'transactions': transactions,
-                'reward': reward,
                 'nonce': nonce,
                 'user': user,
                 'target': target,
@@ -170,6 +169,10 @@ class TransactionManager(object):
         transaction_hash = TransactionManager._get_hash(transaction)
         del self._pool[transaction_hash]
 
+    def compute_reward(self):
+        reward = 5000000000
+        reward = reward >> floor(self.height/90)
+        return reward
 
 if __name__ == '__main__':
     transaction_manager = register(TransactionManager, 'transaction_manager')
