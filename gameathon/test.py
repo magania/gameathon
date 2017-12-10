@@ -14,6 +14,7 @@ tm = TransactionManager()
 tm.init()
 response = requests.get(_ENDPOINT_BLOCKS)
 blocks = json.loads(response.content)
+print(blocks)
 ob = blocks[-1]
 print(ob)
 new_block = tm.build_block(ob)

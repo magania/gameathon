@@ -63,6 +63,7 @@ def _process_event(event):
     if event_type == 'block_found':
         print('Block found:')
         print(event_data)
+        _miner.stop()
         _transaction_manager.block_found(event_data)
         new_block = _transaction_manager.build_block(event_data)
         _miner.mine_block(new_block)

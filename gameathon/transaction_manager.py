@@ -118,7 +118,10 @@ class TransactionManager(object):
         transactions = [coinbase]
         # For now return all transactions plus coinbase
         for transaction in self._pool.values():
-            transactions.append(transaction)
+            if transaction['inputs'][0]['prev_hash'] != '0000000000000000000000000000000000000000000000000000000000000000': 
+                transactions.append(transaction)
+            if len(transactions) > 100:
+                break
         return transactions
 
     def _hash_pair(h1, h2):
