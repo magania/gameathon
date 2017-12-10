@@ -7,6 +7,7 @@ import requests
 import json
 import sys
 from threading import Thread
+from multiprocessing import Process
 
 from messenger import register
 
@@ -57,13 +58,11 @@ class Miner(object):
         print('stop')
         self.stop_ = True
         if self._worker:
-            print('killing worker')
-            #self._worker.stop()
-            
-        print('done')
+            self._worker.terminate()
+
         target_ = self.target_raw
         value = self.value
-        worker = Thread(target=self.do_mine_block, args = (0, self._MAX_INT, target_, block, value))
+        worker = Process(target=self.do_mine_block, args = (0, self._MAX_INT, target_, block, value))
         self._worker = worker
         self._worker.start()
 
